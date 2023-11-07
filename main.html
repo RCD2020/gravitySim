@@ -17,7 +17,7 @@
             const sunMass = 1.989e30;
             const gravConst = 6.6743e-11;
             // const kmscale = 1e11;
-            const smscale = 7;
+            const smscale = 10;
             const mscale = 1*10**smscale;
             // const mscale = 1e10;
             const speed = 20; // 20
@@ -101,7 +101,7 @@
                     } else {
                         this.radius = minRadius;
                     }
-                    // this.radius = radius;
+
                     this.vectorX = vectorX;
                     this.vectorY = vectorY;
                     this.color = color;
@@ -112,12 +112,12 @@
                 update() {
                     this.x += this.vectorX;
                     this.y += this.vectorY;
-                    if (0 > this.x || this.x > width) {
-                        this.handleBoundaryX();
-                    }
-                    if (0 > this.y || this.y > height) {
-                        this.handleBoundaryY();
-                    }
+                    // if (0 > this.x || this.x > width) {
+                    //     this.handleBoundaryX();
+                    // }
+                    // if (0 > this.y || this.y > height) {
+                    //     this.handleBoundaryY();
+                    // }
 
                     var ctx = myGameArea.context;
                     ctx.fillStyle = this.color;
@@ -184,14 +184,14 @@
                     let distY = planet.y - this.y;
                     var dist = Math.sqrt(distX**2 + distY**2);
                     dist *= mscale;
-                    if (dist < this.realRadius || dist < planet.realRadius) {
-                        if (this.mass >= planet.mass) {
-                            this.combine(planet);
-                        } else {
-                            planet.combine(this);
-                        }
-                        return 0;
-                    }
+                    // if (dist < this.realRadius || dist < planet.realRadius) {
+                    //     if (this.mass >= planet.mass) {
+                    //         this.combine(planet);
+                    //     } else {
+                    //         planet.combine(this);
+                    //     }
+                    //     return 0;
+                    // }
                     var angle = Math.atan(distY/distX);
                     if (distX > 0) {
                         angle += Math.PI;
@@ -306,7 +306,7 @@
 
 
             var planets = [
-                // new Planet(sunMass, sunX, sunY, 0, 0, "#FDB813", "Sun", 6.957e8),
+                new Planet(sunMass, sunX, sunY, 0, 0, "#FDB813", "Sun", 6.957e8),
                 new Planet(3.285e23, sunX - 69.058e9 / mscale, sunY, 0, (.9*3**9)/3**smscale, "#e5e5e5", "Mercury", 2.44e6),
                 new Planet(4.867e24, sunX - 108.94e9 / mscale, sunY, 0, (1*3**9)/3**smscale, "#a57c1b", "Venus", 6.0518e6),
                 new Planet(5.9724e24, sunX - 151.78e9 / mscale, sunY, 0, (1*3**9)/3**smscale, "#4f4cb0", "Earth", 6.3781e6),
@@ -364,20 +364,20 @@
                 return (Math.random() * (high-low)) + low;
             }
 
-            for (let i = 0; i < satelliteNames.length; i++) {
-                let mass = random(9.1e20, 1.89813e27);
-                let x = random(0, width);
-                let y = random(0, height);
-                let vector = (1*3**9)/3**smscale;
-                let vectorX = random(-vector, vector);
-                let vectorY = random(-vector, vector);
-                let color = "#" + (num2hex(random(0, 0xffffff)));
-                let name = satelliteNames[i];
-                // let radius = mass * 5e-11;
-                let radius = 6.0518e6
+            // for (let i = 0; i < satelliteNames.length; i++) {
+            //     let mass = random(9.1e20, 1.89813e27);
+            //     let x = random(0, width);
+            //     let y = random(0, height);
+            //     let vector = (1*3**9)/3**smscale;
+            //     let vectorX = random(-vector, vector);
+            //     let vectorY = random(-vector, vector);
+            //     let color = "#" + (num2hex(random(0, 0xffffff)));
+            //     let name = satelliteNames[i];
+            //     // let radius = mass * 5e-11;
+            //     let radius = 6.0518e6
 
-                planets.push(new Planet(mass, x,y, vectorX,vectorY, color, name, radius));
-            }
+            //     planets.push(new Planet(mass, x,y, vectorX,vectorY, color, name, radius));
+            // }
 
             // for (let i = 0; i < 80; i++) {
             //     let mass = sunMass;
@@ -394,20 +394,20 @@
             //     planets.push(new Planet(mass, x,y, vectorX,vectorY, color, name, radius));
             // }
 
-            for (let i = 0; i < 100; i++) {
-                let mass = random(9.1e20, 1.89813e27);
-                let x = random(0, width);
-                let y = random(0, height);
-                // let vector = (1*3**9)/3**smscale;
-                // let vectorX = random(-vector, vector);
-                // let vectorY = random(-vector, vector);
-                let color = "#" + (num2hex(random(0, 0xffffff)));
-                let name = "Planet " + i;
-                // let radius = mass * 5e-11;
-                let radius = 6.0518e6
+            // for (let i = 0; i < 100; i++) {
+            //     let mass = random(9.1e20, 1.89813e27);
+            //     let x = random(0, width);
+            //     let y = random(0, height);
+            //     // let vector = (1*3**9)/3**smscale;
+            //     // let vectorX = random(-vector, vector);
+            //     // let vectorY = random(-vector, vector);
+            //     let color = "#" + (num2hex(random(0, 0xffffff)));
+            //     let name = "Planet " + i;
+            //     // let radius = mass * 5e-11;
+            //     let radius = 6.0518e6
 
-                planets.push(new Planet(mass, x,y, 0,0, color, name, radius));
-            }
+            //     planets.push(new Planet(mass, x,y, 0,0, color, name, radius));
+            // }
 
 
             function drawSun() {
