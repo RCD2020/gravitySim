@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Sim</title>
+        
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body onload="startGame()">
+        <div></div>
+        <script>
+
+            // var earth;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const sunX = width / 2;
+            const sunY = height / 2;
+            const sunMass = 1.989e30;
+            const gravConst = 6.6743e-11;
+            // const kmscale = 1e11;
+            const smscale = 10;
+            const mscale = 1*10**smscale;
+            // const mscale = 1e10;
+            const speed = 20; // 20
+            var mouseX = 0;
+            var mouseY = 0;
+            const minRadius = 2;
+
+            // onmousemove = function(e) {
+            //     mouseX = e.clientX;
+            //     mouseY = e.clientY;
+
+
+            //     // let x = e.clientX;
+            //     // let y = e.clientY;
+            //     // // console.log("mouse location:", x, y);
+                
+            //     // let distX = sunX - x;
+            //     // let distY = sunY - y;
+            //     // var dist = Math.sqrt(distX**2 + distY**2);
+            //     // dist *= mscale;
+            //     // let angle = Math.atan(distY/distX);
+
+            //     // console.log(angle * 180 / Math.PI);
+            // }
+
+            function startGame() {
+                // Earth Radius: 6.3781e3 km
+                // Earth Mass: 5.9724e24kg
+                // earth = new Planet(5.9724e24, 50, 50, 6.3781e3/kmscale, 2, 5, "#0000ff");
+                // earth = new Planet(5.9724e24, 50, 50, 3, 0, 3, "#0000ff", "Earth");
+                // sunGrav = new Planet(sunMass, sunX, sunY, 4, 0, 0, "#FDB813", "Sun");
+
+                myGameArea.start();
+            }
+
+            var myGameArea = {
+                canvas : document.createElement("canvas"),
+                start : function() {
+                    this.canvas.width = width;
+                    this.canvas.height = height;
+                    this.context = this.canvas.getContext("2d");
+                    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+                    this.frameNo = 0;
+                    this.interval = setInterval(updateGameArea, speed);
+                },
+                clear : function() {
+                    this.context.clearRect(0, 0, width, height);
+                    // this.context.beginPath();
+                }
+            }
+
+            function hex2num(hexa) {
+                let num = Number("0x" + hexa);
+                return num;
+            }
+
+            function num2hex(num) {
+                num = num - num%1;
+                let hexa = num.toString(16);
+                return hexa;
+            }
+
+            function averageColor(color1, color2) {
+                let num1 = hex2num(color1.slice(1));
+                let num2 = hex2num(color2.slice(1));
+                let average = (num1 + num2) / 2;
+                let avNoDec = average - (average % 1);
+                let hexa = num2hex(avNoDec);
+                let newColor = "#" + hexa;
+                return newColor;
+            }
+
+            class Planet {
+                constructor(mass, x, y, vectorX, vectorY, color, name, realRadius) {
+                    this.mass = mass;
+                    this.x = x;
+                    this.y = y;
+                    if (realRadius / mscale >= minRadius) {
+                        let radius = realRadius / mscale;
+                        this.radius = radius;
+                    } else {
+                        this.radius = minRadius;
+                    }
+
+                    this.vectorX = vectorX;
+                    this.vectorY = vectorY;
+                    this.color = color;
+                    this.name = name;
+                    this.realRadius = realRadius;
+                }
+
+                update() {
+                    this.x += this.vectorX;
+                    this.y += this.vectorY;
+                    // if (0 > this.x || this.x > width) {
+                    //     this.handleBoundaryX();
+                    // }
+                    // if (0 > this.y || this.y > height) {
+                    //     this.handleBoundaryY();
+                    // }
+
+                    var ctx = myGameArea.context;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                newPos() {
+                    // F(N) = 6.67e-11 * m1(kg) * m2(kg) / d^2(m)
+
+                    let distX = -(sunX - this.x);
+                    let distY = sunY - this.y;
+                    // console.log("distX: " + distX + ", distY: " + distY);
+                    var dist = Math.sqrt(distX**2 + distY**2);
+                    // console.log("var " + dist + " = Math.sqrt(" + distX**2 + " + " + distY**2 + ");");
+                    dist *= mscale;
+                    var angle = Math.atan(distY/distX);
+                    if (distX > 0) {
+                        angle += Math.PI;
+                    }
+                    // console.log(Math.atan(300/400));
+                    // console.log(angle);
+                    
+                    let force = (gravConst * this.mass * sunMass) / (dist**2);
+                    // console.log(dist + "m " + this.x + " " + this.y + " " + force);
+
+
+                    // F(N) = mass(kg) * acceleration (m/s^2)
+                    let acceleration = force / this.mass;
+                    // console.log(dist/1e3 + "km " + acceleration + "m/s^2");
+
+                    // let distRatio = acceleration / dist;
+
+                    // opposite = sin(angle) * hypotenuse
+                    let yChange = -(Math.sin(angle) * acceleration);
+                    // let xChange;
+                    let xChange = -(Math.cos(angle) * acceleration);
+                    // console.log("Relative: (" + (this.x - sunX) + ", " + (sunY - this.y) + ")");
+                    // console.log("let " + yChange + " = Math.sin(" + angle + ") * " + acceleration);
+                    // console.log("let " + xChange + " = Math.cos(" + angle + ") * " + acceleration);
+                    // console.log(yChange);
+
+                    this.vectorX -= xChange;
+                    this.vectorY += yChange;
+
+                    // let xRatio = distX * distRatio;
+                    // let yRatio = distY * distRatio;
+                    // this.vectorX += xRatio;
+                    // this.vectorY += yRatio;
+                    
+
+                    this.x += this.vectorX;
+                    this.y += this.vectorY;
+                    // console.log("vX: " + this.vectorX + " vY: " + this.vectorY);
+                }
+
+                newPull(planet) {
+                    if (this.mass == 0 || planet.mass == 0) {
+                        return 0;
+                    }
+                    let distX = -(planet.x - this.x);
+                    let distY = planet.y - this.y;
+                    var dist = Math.sqrt(distX**2 + distY**2);
+                    dist *= mscale;
+                    // if (dist < this.realRadius || dist < planet.realRadius) {
+                    //     if (this.mass >= planet.mass) {
+                    //         this.combine(planet);
+                    //     } else {
+                    //         planet.combine(this);
+                    //     }
+                    //     return 0;
+                    // }
+                    var angle = Math.atan(distY/distX);
+                    if (distX > 0) {
+                        angle += Math.PI;
+                    }
+
+                    let force = (gravConst * this.mass * planet.mass) / (dist**2);
+                    let acceleration = force / this.mass;
+
+                    let yChange = -(Math.sin(angle) * acceleration);
+                    let xChange = Math.cos(angle) * acceleration;
+
+                    this.vectorX += xChange;
+                    this.vectorY += yChange;
+                    // this.x += this.vectorX;
+                    // this.y += this.vectorY;
+                }
+
+                writeCoords(textSpot=1) {
+                    var ctx = myGameArea.context;
+                    ctx.beginPath();
+
+                    ctx.fillStyle = this.color;
+                    ctx.font = "15px Arial";
+
+                    let spot = textSpot * 30
+                    ctx.fillText(this.name + ": (" + this.x + ", " + this.y + ")", 10, spot);
+                    // console.log(typeof textSpot);
+
+                    ctx.closePath();
+                }
+
+                combine(planet) {
+                    this.mass += planet.mass;
+                    planet.mass = 0;
+
+                    this.vectorX = (this.mass*this.vectorX + planet.mass*planet.vectorX) / (this.mass + planet.mass);
+                    this.vectorY = (this.mass*this.vectorY + planet.mass*planet.vectorY) / (this.mass + planet.mass);
+                    // this.vectorX += planet.vectorX;
+                    // this.vectorY += planet.vectorY;
+
+                    // Area=PIr^2
+                    // r = sqrt(Area/PI)
+                    let area = (Math.PI * this.realRadius**2) + (Math.PI * planet.realRadius**2);
+                    let newRadius = Math.sqrt(area / Math.PI);
+                    this.realRadius = newRadius;
+                    if (this.realRadius / mscale >= minRadius) {
+                        let radius = this.realRadius / mscale;
+                        this.radius = radius;
+                    }
+                    this.color = averageColor(this.color, planet.color);
+                    this.name = this.name.slice(0, this.name.length/2) + planet.name.slice(planet.name.length/2);
+                }
+
+                handleBoundaryX() {
+
+                    // Stops
+
+                    this.vectorX = 0;
+                    if (this.x < 0) {
+                        this.x = 0;
+                    } else if (this.x > width) {
+                        this.x = width;
+                    }
+
+
+                    // Bounces
+
+                    // this.vectorX = -this.vectorX * .75;
+                    // if (this.x < 0) {
+                    //     this.x = 1;
+                    // } else if (this.x > width) {
+                    //     this.x = width-1;
+                    // }
+                }
+
+                handleBoundaryY() {
+
+                    // Stops
+
+                    this.vectorY = 0;
+                    if (this.y < 0) {
+                        this.y = 0;
+                    } else if (this.y > height) {
+                        this.y = height;
+                    }
+
+
+                    // Bounces
+
+                    // this.vectorY = -this.vectorY * .75;
+                    // if (this.y < 0) {
+                    //     this.y = 1;
+                    // } else if (this.y > height) {
+                    //     this.y = height-1;
+                    // }
+                }
+
+                writeMass(textSpot=1) {
+                    var ctx = myGameArea.context;
+                    ctx.beginPath();
+
+                    ctx.fillStyle = this.color;
+                    ctx.font = "15px Arial";
+
+                    let spot = textSpot * 20
+                    ctx.fillText(this.name + ": " + this.mass + "kg", 10, spot);
+                    // console.log(typeof textSpot);
+
+                    ctx.closePath();
+                }
+            }
+
+
+            var planets = [
+                new Planet(sunMass, sunX, sunY, 0, 0, "#FDB813", "Sun", 6.957e8),
+                new Planet(3.285e23, sunX - 69.058e9 / mscale, sunY, 0, (.9*3**9)/3**smscale, "#e5e5e5", "Mercury", 2.44e6),
+                new Planet(4.867e24, sunX - 108.94e9 / mscale, sunY, 0, (1*3**9)/3**smscale, "#a57c1b", "Venus", 6.0518e6),
+                new Planet(5.9724e24, sunX - 151.78e9 / mscale, sunY, 0, (1*3**9)/3**smscale, "#4f4cb0", "Earth", 6.3781e6),
+                new Planet(6.39e24, sunX - 247.52e9 / mscale, sunY, 0, (.8*3**9)/3**smscale, "#f0e7e7", "Mars", 3.39e6),
+                new Planet(9.1e20, sunX - 413e9 / mscale, sunY, 0, (.5*3**9)/3**smscale, "#d0c5d6", "Ceres", 476e3),
+                new Planet(1.89813e27, sunX - 742.21e9 / mscale, sunY, 0, (.4*3**9)/3**smscale, "#ebf3f6", "Jupiter", 69.911e6),
+                new Planet(5.683e26, sunX - 1.4613e12 / mscale, sunY, 0, (.9*3**8)/3**smscale, "#ceb8b8", "Saturn", 58.232e6),
+                new Planet(8.681e25, sunX - 2.9365e12 / mscale, sunY, 0, (.6*3**8)/3**smscale, "#e1eeee", "Uranus", 25.362e6),
+                new Planet(1.024e26, sunX - 4.4729e12 / mscale, sunY, 0, (.4*3**8)/3**smscale, "#5b5ddf", "Neptune", 24.622e6),
+                new Planet(1.309e22, sunX - 5.91e12 / mscale, sunY, 0, (.3*3**8)/3**smscale, "#fff1d5", "Pluto", 1.1883e6),
+                new Planet(3.1e21, sunX - 6.847e12 / mscale, sunY, 0, (.3*3**8)/3**smscale, "#c1440e", "Makemake", 715e3),
+                // new Planet(sunMass, sunX, 15, -.1, .1, "#FBB611", "Sun 2", 6.957e8),
+                // new Planet(sunMass, sunX, height-15, .1, -.1, "#FDB813", "Sun 3", 6.957e8),
+                // new Planet(sunMass, 15, sunY, .1, .1, "#FDB813", "Sun 4", 6.957e8),
+                // new Planet(sunMass, width-15, sunY, -.1, -.1, "#FDB813", "Sun 5", 6.957e8),
+                // new Planet(sunMass*9, sunX,sunY, 0,0, "#ffffff", "Gaia BH1", 28e3)
+                // new Planet(5.379e31, sunX,sunY, 0,0, "#600fff", "10 Lacertae", 5.7534e9),
+                // new Planet(3.58e31, sunX,sunY, 0,0, "#afbbff", "Rigel", 5.4891e10)
+            ];
+
+            // var planets = [
+            //     new Planet(sunMass, sunX-80, sunY+80, .2, 0, "#FDB813", "Sun 1", 6.957e8),
+            //     new Planet(sunMass, sunX+80, sunY-80, -.2, 0, "#FDB813", "Sun 2", 6.957e8),
+            //     new Planet(3.285e23, sunX - 69.058e9 / mscale, sunY, 0, (.9*3**9)/3**smscale, "#e5e5e5", "Mercury", 2.44e6),
+            //     new Planet(4.867e24, sunX - 108.94e9 / mscale, sunY, 0, (1*3**9)/3**smscale, "#a57c1b", "Venus", 6.0518e6),
+            //     new Planet(5.9724e24, sunX - 151.78e9 / mscale, sunY, 0, (1*3**9)/3**smscale, "#4f4cb0", "Earth", 6.3781e6),
+            //     new Planet(6.39e24, sunX - 247.52e9 / mscale, sunY, 0, (.8*3**9)/3**smscale, "#f0e7e7", "Mars", 3.39e6),
+            //     new Planet(9.1e20, sunX - 413e9 / mscale, sunY, 0, (.5*3**9)/3**smscale, "#d0c5d6", "Ceres", 476e3),
+            //     new Planet(1.89813e27, sunX - 742.21e9 / mscale, sunY, 0, (.4*3**9)/3**smscale, "#ebf3f6", "Jupiter", 69.911e6),
+            //     new Planet(5.683e26, sunX - 1.4613e12 / mscale, sunY, 0, (.9*3**8)/3**smscale, "#ceb8b8", "Saturn", 58.232e6),
+            //     new Planet(8.681e25, sunX - 2.9365e12 / mscale, sunY, 0, (.6*3**8)/3**smscale, "#e1eeee", "Uranus", 25.362e6),
+            //     new Planet(1.024e26, sunX - 4.4729e12 / mscale, sunY, 0, (.4*3**8)/3**smscale, "#5b5ddf", "Neptune", 24.622e6),
+            //     new Planet(1.309e22, sunX - 5.91e12 / mscale, sunY, 0, (.3*3**8)/3**smscale, "#fff1d5", "Pluto", 1.1883e6),
+            //     new Planet(3.1e21, sunX - 6.847e12 / mscale, sunY, 0, (.3*3**8)/3**smscale, "#c1440e", "Makemake", 715e3)
+            // ];
+
+            const satelliteNames = ['Moon', 'Phobos', 'Deimos', 'Io', 'Europa', 'Ganymede', 'Callisto', 'Amalthea', 'Himalia', 'Elara',
+            'Pasiphae', 'Sinope', 'Lysithea', 'Carme', 'Ananke', 'Leda', 'Thebe', 'Adrastea', 'Metis', 'Callirrhoe', 'Themisto',
+            'Megaclite', 'Taygete', 'Chaldene', 'Harpalyke', 'Kalyke', 'Iocaste', 'Erinome', 'Isonoe', 'Praxidike', 'Autonoe', 'Thyone',
+            'Hermippe', 'Aitne', 'Eurydome', 'Euanthe', 'Euporie', 'Orthosie', 'Sponde', 'Kale', 'Pasithee', 'Hegemone', 'Mneme', 'Aoede',
+            'Thelxinoe', 'Arche', 'Kallichore', 'Helike', 'Carpo', 'Eukelade', 'Cyllene', 'Kore', 'Herse', 'S/2000 J11', 'S/2003 J2',
+            'S/2003 J3', 'S/2003 J4', 'S/2003 J5', 'S/2003 J9', 'S/2003 J10', 'S/2003 J12', 'S/2003 J15', 'S/2003 J16', 'S/2003 J18',
+            'S/2003 J19', 'S/2003 J23', 'S/2010 J1', 'S/2010 J2', 'S/2011 J1', 'S/2011 J2', 'Mimas', 'Enceladus', 'Tethys', 'Dione',
+            'Rhea', 'Titan', 'Hyperion', 'Iapetus', 'Phoebe', 'Janus', 'Epimetheus', 'Helene', 'Telesto', 'Calypso', 'Atlas', 'Prometheus',
+            'Pandora', 'Pan', 'Methone', 'Pallene', 'Polydeuces', 'Daphnis', 'Anthe', 'Aegaeon', 'Ymir', 'Paaliaq', 'Tarvos', 'Ijiraq',
+            'Suttungr', 'Kiviuq', 'Mundilfari', 'Albiorix', 'Skathi', 'Erriapus', 'Siarnaq', 'Thrymr', 'Narvi', 'Aegir', 'Bebhionn',
+            'Bergelmir', 'Bestla', 'Farbauti', 'Fenrir', 'Fornjot', 'Hati', 'Hyrrokkin', 'Kari', 'Loge', 'Skoll', 'Surtur', 'Jarnsaxa',
+            'Greip', 'Tarqeq', 'S/2004 S7', 'S/2004 S12', 'S/2004 S13', 'S/2004 S17', 'S/2006 S1', 'S/2006 S3', 'S/2007 S2', 'S/2007 S3',
+            'Ariel', 'Umbriel', 'Titania', 'Oberon', 'Miranda', 'Cordelia', 'Ophelia', 'Bianca', 'Cressida', 'Desdemona', 'Juliet',
+            'Portia', 'Rosalind', 'Belinda', 'Puck', 'Caliban', 'Sycorax', 'Prospero', 'Setebos', 'Stephano', 'Trinculo', 'Francisco',
+            'Margaret', 'Ferdinand', 'Perdita', 'Mab', 'Cupid', 'Triton', 'Nereid', 'Naiad', 'Thalassa', 'Despina', 'Galatea', 'Larissa',
+            'Proteus', 'Halimede', 'Psamathe', 'Sao', 'Laomedeia', 'Neso', 'S/2004 N1', 'Charon', 'Nix', 'Hydra', 'Kerberos', 'Styx'];
+
+            function random(low, high) {
+                return (Math.random() * (high-low)) + low;
+            }
+
+            // for (let i = 0; i < satelliteNames.length; i++) {
+            //     let mass = random(9.1e20, 1.89813e27);
+            //     let x = random(0, width);
+            //     let y = random(0, height);
+            //     let vector = (1*3**9)/3**smscale;
+            //     let vectorX = random(-vector, vector);
+            //     let vectorY = random(-vector, vector);
+            //     let color = "#" + (num2hex(random(0, 0xffffff)));
+            //     let name = satelliteNames[i];
+            //     // let radius = mass * 5e-11;
+            //     let radius = 6.0518e6
+
+            //     planets.push(new Planet(mass, x,y, vectorX,vectorY, color, name, radius));
+            // }
+
+            // for (let i = 0; i < 80; i++) {
+            //     let mass = sunMass;
+            //     let x = random(0, width);
+            //     let y = random(0, height);
+            //     let vector = (1*3**9)/3**smscale;
+            //     let vectorX = random(-vector, vector);
+            //     let vectorY = random(-vector, vector);
+            //     let color = "#fdb813";
+            //     let name = "Sun " + i;
+            //     // let radius = mass * 5e-11;
+            //     let radius = 6.957e8
+
+            //     planets.push(new Planet(mass, x,y, vectorX,vectorY, color, name, radius));
+            // }
+
+            // for (let i = 0; i < 100; i++) {
+            //     let mass = random(9.1e20, 1.89813e27);
+            //     let x = random(0, width);
+            //     let y = random(0, height);
+            //     // let vector = (1*3**9)/3**smscale;
+            //     // let vectorX = random(-vector, vector);
+            //     // let vectorY = random(-vector, vector);
+            //     let color = "#" + (num2hex(random(0, 0xffffff)));
+            //     let name = "Planet " + i;
+            //     // let radius = mass * 5e-11;
+            //     let radius = 6.0518e6
+
+            //     planets.push(new Planet(mass, x,y, 0,0, color, name, radius));
+            // }
+
+
+            function drawSun() {
+                var ctx = myGameArea.context;
+                ctx.beginPath();
+                ctx.fillStyle = "#FDB813"
+                // Sun Radius: 6.957e5 km
+                // ctx.arc(sunX, sunY, 6.957e5/kmscale, 0, 2 * Math.PI, false);
+                ctx.arc(sunX, sunY, 4, 0, 2 * Math.PI, false);
+                ctx.closePath();
+                ctx.fill()
+            }
+
+            function drawMouse2Sun() {
+                var ctx = myGameArea.context;
+                ctx.beginPath();
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 3;
+                ctx.font = "20px Arial";
+
+                ctx.moveTo(mouseX, mouseY);
+
+                let distX = -(sunX - mouseX);
+                let distY = sunY - mouseY;
+                let dist = Math.sqrt(distX**2 + distY**2);
+                var angle = Math.atan(distY/distX);
+                if (distX > 0) {
+                    angle += Math.PI;
+                }
+
+                xChange = -(Math.cos(angle) * dist);
+                yChange = -(Math.sin(angle) * dist);
+                x = mouseX - xChange;
+                y = mouseY + yChange;
+                ctx.lineTo(x,y);
+                ctx.stroke();
+
+                ctx.fillText("mouseX: " + mouseX + ", mouseY: " + mouseY, 10, 30);
+                ctx.fillText("distX: " + distX + ", distY: " + distY + ", dist: " + dist, 10, 60);
+                ctx.fillText("angle: " + (angle / Math.PI) + "pi (" + (angle*180 / Math.PI) + " degrees)" , 10, 90);
+                ctx.fillText("xChange: " + xChange + ", yChange: " + yChange, 10, 120);
+                ctx.fillText("x: " + x + ", y: " + y, 10, 150);
+                
+                ctx.closePath();
+            }
+
+            function updateGameArea() {
+                myGameArea.clear()
+                myGameArea.frameNo += 1;
+
+                // drawSun();
+                // // drawMouse2Sun();
+                // earth.newPos();
+                // earth.update();
+                // earth.writeCoords();
+
+                for (let x in planets) {
+                    for (let y in planets) {
+                        if (x != y) {
+                            planets[x].newPull(planets[y]);
+                        }
+                    }
+                }
+                var offSet = 0;
+                for (let x = 0; x < planets.length; x++) {
+                    if (planets[x-offSet].mass == 0) {
+                        let firstHalf = planets.slice(0, x-offSet);
+                        if (x-offSet != planets.length) {
+                            let secondHalf = planets.slice(x-offSet+1);
+                            planets = firstHalf.concat(secondHalf);
+                        } else {
+                            planets = firstHalf;
+                        }
+
+                        offSet++;
+                        continue;
+                    }
+                    planets[x-offSet].update();
+                    // planets[x-offSet].writeCoords(x-offSet+1);
+                    planets[x-offSet].writeMass(x-offSet+1);
+                }
+
+            }
+
+
+        </script>
+    </body>
+</html>
